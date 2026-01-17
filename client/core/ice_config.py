@@ -1,5 +1,6 @@
 """ICE (STUN/TURN) server configuration."""
 import logging
+from aiortc import RTCIceServer
 
 logger = logging.getLogger(__name__)
 
@@ -23,15 +24,13 @@ def get_ice_servers():
     Get ICE server configuration for WebRTC.
 
     Returns:
-        list: List of ICE server configurations
+        list: List of RTCIceServer objects
     """
     ice_servers = []
 
     # Add STUN servers
     for stun_url in STUN_SERVERS:
-        ice_servers.append({
-            'urls': stun_url
-        })
+        ice_servers.append(RTCIceServer(urls=stun_url))
 
     logger.info(f"Configured {len(ice_servers)} ICE servers")
     return ice_servers
