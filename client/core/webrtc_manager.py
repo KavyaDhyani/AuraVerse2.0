@@ -2,7 +2,7 @@
 import asyncio
 import logging
 from typing import Dict, Optional, Callable
-from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceCandidate
+from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceCandidate, RTCConfiguration
 from aiortc.contrib.media import MediaBlackhole
 from .ice_config import get_ice_servers
 from .data_channel import DataChannelHandler
@@ -41,9 +41,9 @@ class WebRTCManager:
                 asyncio.create_task(self.close_peer_connection(peer_id))
 
             # Create new peer connection with ICE servers
-            pc = RTCPeerConnection(configuration={
-                'iceServers': self.ice_servers
-            })
+            pc = RTCPeerConnection(configuration=RTCConfiguration(
+                iceServers=self.ice_servers
+            ))
 
             self.peer_connections[peer_id] = pc
             self.connection_states[peer_id] = 'new'
