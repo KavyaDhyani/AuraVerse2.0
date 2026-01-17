@@ -235,18 +235,28 @@ class SignalingClient:
         except Exception as e:
             logger.error(f"Failed to send ICE candidate: {e}", exc_info=True)
 
-    async def send_pairing_request(self, to_device_id: str):
+    async def send_pairing_request(self, to_device_id: str, from_device_id: str = None, 
+                                   from_device_name: str = None, from_device_type: str = None):
         """
         Send pairing request to another device.
 
         Args:
             to_device_id: Target device ID
+            from_device_id: Optional sender device ID
+            from_device_name: Optional sender device name
+            from_device_type: Optional sender device type
         """
         try:
             logger.info(f"Sending pairing request to {to_device_id}")
-            await self.sio.emit('pairing_request', {
-                'to_device_id': to_device_id
-            })
+            payload = {'to_device_id': to_device_id}
+            if from_device_id:
+                payload['from_device_id'] = from_device_id
+            if from_device_name:
+                payload['from_device_name'] = from_device_name
+            if from_device_type:
+                payload['from_device_type'] = from_device_type
+                
+            await self.sio.emit('pairing_request', payload)
         except Exception as e:
             logger.error(f"Failed to send pairing request: {e}", exc_info=True)
 

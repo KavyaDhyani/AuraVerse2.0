@@ -93,7 +93,12 @@ class TUI:
             if command == "status":
                 await self._show_status()
             elif command == "pair":
-                await self._start_pairing()
+                if args:
+                    # Pair with specific device ID
+                    await self._pair_with_device(args[0])
+                else:
+                    # Show pairing info
+                    await self._start_pairing()
             elif command == "devices":
                 await self._show_devices()
             elif command == "connect":
@@ -137,7 +142,8 @@ class TUI:
         help_table.add_column("Description")
         
         help_table.add_row("status", "Show device info, server connection, paired devices")
-        help_table.add_row("pair", "Start pairing flow (generate pairing code)")
+        help_table.add_row("pair", "Show your device ID and pairing code")
+        help_table.add_row("pair <device_id>", "Send pairing request to another device")
         help_table.add_row("devices", "List all paired devices and their status")
         help_table.add_row("connect <id>", "Connect to a paired device")
         help_table.add_row("disconnect <id>", "Disconnect from a device")
@@ -242,12 +248,34 @@ class TUI:
             # Also show the pairing code for manual entry
             self.console.print(f"\n[bold]Pairing Code:[/bold] {self.app.device_id[:8]}")
             self.console.print(f"[bold]Device ID:[/bold] {self.app.device_id}")
-            self.console.print("\n[yellow]Scan QR code or share Device ID with the other device.[/yellow]")
-            self.console.print("[yellow]Waiting for pairing request... (other device should also run 'pair')[/yellow]")
+            self.console.print("\n[yellow]On the other device, run:[/yellow]")
+            self.console.print(f"[cyan]  pair {self.app.device_id}[/cyan]")
+            self.console.print("\n[yellow]Or scan the QR code above.[/yellow]")
             
         except Exception as e:
             logger.error(f"Error starting pairing: {e}", exc_info=True)
             self.console.print(f"[red]Error: {e}[/red]")
+
+    async def _pair_with_device(self, device_id: str):
+        """Pair with a specific device by ID."""
+        try:
+            self.console.print(f"[cyan]Pairing with device {device_id[:8]}...[/cyan]")
+            
+            # Send pairing request via signaling server
+            await self.app.signaling_client.send_pairing_request(
+                device_id,
+                self.app.device_id,
+                self.app.config.get('device_name', 'My Device'),
+                self.app.config.get('device_type', 'Linux')
+            )
+            
+            self.console.print(f"[green]✓ Pairing request sent to {device_id[:8]}...[/green]")
+            self.console.print("[yellow]Waiting for the other device to accept...[/yellow]")
+            
+        except Exception as e:
+            logger.error(f"Error pairing with device: {e}", exc_info=True)
+            self.console.print(f"[red]Error: {e}[/red]")
+
 
     async def _connect_device(self, device_id: str):
         """Connect to a device."""
