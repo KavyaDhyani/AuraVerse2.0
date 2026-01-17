@@ -276,6 +276,23 @@ class ClipboardSyncClient:
         logger.info(f"Connection to {peer_id}: {state}")
         await self.device_registry.update_device_status(peer_id, state)
 
+    async def _connect_to_paired_devices(self):
+        """Initiate WebRTC connections to all paired devices."""
+        try:
+            paired_devices = await self.device_registry.get_paired_devices()
+            logger.info(f"Found {len(paired_devices)} paired devices")
+
+            for device in paired_devices:
+                device_id = device['device_id']
+                device_name = device['device_name']
+                logger.info(f"Initiating connection to paired device: {device_name} ({device_id})")
+
+                # Create WebRTC offer
+                await self.webrtc_manager.create_offer(device_id, self.signaling_client)
+
+        except Exception as e:
+            logger.error(f"Error connecting to paired devices: {e}", exc_info=True)
+
     async def connect_to_server(self):
         """Connect to signaling server."""
         try:
@@ -294,6 +311,10 @@ class ClipboardSyncClient:
             )
 
             logger.info("Connected to signaling server")
+
+            # Initiate WebRTC connections to all paired devices
+            await self._connect_to_paired_devices()
+
             return True
 
         except Exception as e:
